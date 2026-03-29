@@ -388,15 +388,25 @@ async function guardarAlerta(){
 
 async function dispararPushUrgente(titulo, descripcion) {
   try {
-    await sb.functions.invoke('send-push', {
-      body: {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) return;
+    const res = await fetch('https://gkhujhooviccodadnngx.supabase.co/functions/v1/send-push', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + session.access_token,
+        'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdraHVqaG9vdmljY29kYWRubmd4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMjQ1MTgsImV4cCI6MjA4OTYwMDUxOH0.n5o_sVkO24zW9NLHaYLk_i8tsOJZMiYDg1qEU9LhnfU'
+      },
+      body: JSON.stringify({
         finca_id: fincaId,
         title: '🚨 Alerta Urgente — CoTecha',
         body: titulo + (descripcion ? ': ' + descripcion.substring(0, 80) : ''),
         tipo: 'urgente',
         url: 'https://cotecha.github.io/alertas'
-      }
+      })
     });
+    const data = await res.json();
+    console.log('Push result:', data);
   } catch(e) { console.warn('Push send error:', e); }
 }
 
