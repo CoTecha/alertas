@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+<meta name="theme-color" content="#1a3a2a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="CoTecha Alertas">
+<title>CoTecha — Alertas y Avisos</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{--gd:#1a3a2a;--gm:#2d6a4f;--g:#40916c;--gl:#74c69d;--gp:#d8f3dc;--ta:#00b4d8;--gold:#f4a261;--ow:#f8fdf9;--td:#1b2d24;--tm:#5a7a68;--red:#ef4444;--amber:#f59e0b;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',sans-serif;background:var(--ow);color:var(--td);min-height:100vh;}
+#login-page{min-height:100vh;display:none;align-items:center;justify-content:center;background:linear-gradient(160deg,var(--gd),#061a2e);position:relative;}
+#login-page::before{content:'';position:absolute;inset:0;background-image:radial-gradient(circle at 1px 1px,rgba(116,198,157,.15) 1px,transparent 0);background-size:40px 40px;}
+.login-card{background:#fff;border-radius:24px;padding:3rem 2.5rem;width:100%;max-width:400px;box-shadow:0 30px 80px rgba(0,0,0,.4);position:relative;z-index:1;}
+.login-logo{text-align:center;margin-bottom:2rem;}
+.login-logo .icon{width:56px;height:56px;background:linear-gradient(135deg,var(--gl),var(--ta));border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;font-size:24px;}
+.login-logo h1{font-size:1.8rem;font-weight:900;color:var(--td);}.login-logo h1 span{color:var(--g);}
+.login-logo p{font-size:0.82rem;color:var(--tm);margin-top:0.2rem;}
+.fg{margin-bottom:1.2rem;}
+.fg label{display:block;font-size:0.82rem;font-weight:600;color:var(--tm);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.4rem;}
+.fg input,.fg select,.fg textarea{width:100%;padding:0.75rem 1rem;border:1.5px solid #dde8e0;border-radius:10px;font-family:'Inter',sans-serif;font-size:0.9rem;background:white;color:var(--td);outline:none;transition:border-color 0.2s;appearance:none;}
+.fg input:focus,.fg select:focus,.fg textarea:focus{border-color:var(--g);box-shadow:0 0 0 3px rgba(64,145,108,0.1);}
+.fg select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%234a6642' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 1rem center;padding-right:2.5rem;}
+.fg textarea{resize:vertical;min-height:70px;}
+.btn-p{width:100%;padding:0.85rem;background:linear-gradient(135deg,var(--g),var(--ta));color:white;border:none;border-radius:50px;font-family:'Inter',sans-serif;font-size:0.97rem;font-weight:700;cursor:pointer;box-shadow:0 8px 24px rgba(64,145,108,0.3);}
+.btn-p:disabled{opacity:0.6;cursor:not-allowed;}
+.err{background:#fdf0ef;border:1px solid #f0c0bb;color:#8b2d25;padding:0.65rem 0.9rem;border-radius:10px;font-size:0.88rem;margin-bottom:1rem;display:none;}
+.err.show{display:block;}
+#app{display:none;flex-direction:column;min-height:100vh;}
+.topbar{background:rgba(26,58,42,0.97);backdrop-filter:blur(10px);color:white;padding:0.6rem 1rem;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:0.5rem;position:sticky;top:0;z-index:100;border-bottom:1px solid rgba(116,198,157,0.2);}
+.tb-brand{display:flex;align-items:center;gap:0.5rem;font-size:1.05rem;font-weight:900;}
+.tb-icon{width:28px;height:28px;background:linear-gradient(135deg,var(--gl),var(--ta));border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;}
+.tb-brand span{color:var(--gl);}
+.tb-sub{font-size:0.7rem;color:rgba(255,255,255,0.5);margin-left:0.3rem;padding-left:0.3rem;border-left:1px solid rgba(255,255,255,0.2);}
+.tb-right{display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;}
+.btn-sm{background:rgba(255,255,255,0.08);border:1px solid rgba(116,198,157,0.3);color:rgba(255,255,255,0.8);padding:0.25rem 0.65rem;border-radius:20px;font-size:0.75rem;cursor:pointer;font-family:'Inter',sans-serif;text-decoration:none;}
+.ph{background:white;border-bottom:1px solid #e2f0e8;padding:1rem 1.5rem;display:flex;align-items:center;gap:1rem;}
+.ph h2{font-size:1.2rem;font-weight:800;color:var(--td);flex:1;}
+.content{max-width:760px;margin:0 auto;padding:1.5rem;}
+/* TABS */
+.tabs{display:flex;gap:0.4rem;margin-bottom:1.5rem;background:white;border:1.5px solid #e2f0e8;border-radius:50px;padding:0.3rem;}
+.tab{flex:1;padding:0.5rem;border:none;background:none;border-radius:50px;font-family:'Inter',sans-serif;font-size:0.82rem;font-weight:600;color:var(--tm);cursor:pointer;transition:background 0.15s;}
+.tab.active{background:linear-gradient(135deg,var(--g),var(--ta));color:white;box-shadow:0 4px 12px rgba(64,145,108,0.3);}
+/* COUNTERS */
+.counters{display:grid;grid-template-columns:repeat(4,1fr);gap:0.75rem;margin-bottom:1.5rem;}
+.counter{background:white;border:1.5px solid #e2f0e8;border-radius:16px;padding:1rem;text-align:center;position:relative;overflow:hidden;}
+.counter::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;}
+.c-urg::before{background:var(--red);}.c-pen::before{background:var(--amber);}.c-hoy::before{background:var(--ta);}.c-ok::before{background:var(--g);}
+.counter-n{font-size:1.8rem;font-weight:900;color:var(--td);line-height:1;}
+.counter-l{font-size:0.68rem;font-weight:700;color:var(--tm);text-transform:uppercase;margin-top:0.2rem;}
+/* ALERTA CARD */
+.al-card{background:white;border:1.5px solid #e2f0e8;border-radius:16px;padding:1.1rem 1.25rem;margin-bottom:0.75rem;display:flex;align-items:flex-start;gap:1rem;transition:box-shadow 0.2s;position:relative;overflow:hidden;}
+.al-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;}
+.al-card.urgente::before{background:var(--red);}
+.al-card.aviso::before{background:var(--amber);}
+.al-card.tarea::before{background:var(--ta);}
+.al-card.recordatorio::before{background:var(--g);}
+.al-card.completada-card{opacity:0.55;}
+.al-card:hover{box-shadow:0 4px 20px rgba(64,145,108,0.1);}
+/* BIG TOGGLE */
+.al-toggle{width:52px;height:52px;border-radius:50%;border:2.5px solid;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0;transition:all 0.2s;background:white;}
+.al-toggle.pendiente{border-color:#dde8e0;color:#dde8e0;}
+.al-toggle.pendiente:hover{border-color:var(--g);color:var(--g);background:var(--gp);}
+.al-toggle.completada{border-color:var(--g);background:var(--g);color:white;}
+.al-body{flex:1;min-width:0;}
+.al-tipo{font-size:0.68rem;font-weight:800;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.25rem;}
+.al-titulo{font-size:0.97rem;font-weight:700;color:var(--td);margin-bottom:0.3rem;}
+.al-titulo.done{text-decoration:line-through;color:var(--tm);}
+.al-desc{font-size:0.83rem;color:var(--tm);line-height:1.4;margin-bottom:0.4rem;}
+.al-meta{display:flex;flex-wrap:wrap;gap:0.5rem;font-size:0.75rem;color:var(--tm);align-items:center;}
+.al-meta .vence{font-weight:700;}
+.al-meta .vence.red{color:var(--red);}
+.al-meta .vence.amber{color:var(--amber);}
+.al-actions{display:flex;gap:0.35rem;margin-top:0.5rem;}
+.btn-edit{background:none;border:1.5px solid #dde8e0;border-radius:6px;padding:0.25rem 0.6rem;font-size:0.75rem;color:var(--tm);cursor:pointer;}
+.btn-del{background:none;border:1.5px solid #f0c0bb;border-radius:6px;padding:0.25rem 0.6rem;font-size:0.75rem;color:#8b2d25;cursor:pointer;}
+/* MODAL */
+.modal-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;align-items:flex-start;justify-content:center;padding:1rem;overflow-y:auto;}
+.modal-box{background:#fff;border-radius:20px;padding:1.75rem;width:100%;max-width:520px;box-shadow:0 24px 64px rgba(0,0,0,0.3);margin:auto;}
+.mh{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;}
+.mh h3{font-size:1.1rem;font-weight:800;}
+.mc{background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--tm);}
+.fr2{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+.ok-banner{background:var(--gp);border:1px solid var(--gl);color:var(--gm);padding:0.9rem 1.1rem;border-radius:50px;font-size:0.88rem;margin-bottom:1.25rem;display:none;align-items:center;gap:0.5rem;font-weight:700;}
+.ok-banner.show{display:flex;}
+.loading{text-align:center;padding:2.5rem;color:var(--tm);}
+@media(max-width:500px){.fr2{grid-template-columns:1fr;}.counters{grid-template-columns:repeat(2,1fr);}}
+footer{margin-top:auto;padding:1rem;text-align:center;font-size:0.72rem;color:var(--tm);border-top:1px solid #e2f0e8;background:white;}
+</style>
+</head>
+<body>
+
+<div id="login-page">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="icon">🔔</div>
+      <h1>Co<span>Techa</span></h1>
+      <p>Alertas y Avisos</p>
+    </div>
+    <div class="err" id="lerr"></div>
+    <div class="fg"><label>Email</label><input type="email" id="lem" placeholder="tu@email.com" autocomplete="email"/></div>
+    <div class="fg"><label>Contraseña</label><input type="password" id="lpass" placeholder="••••••••" autocomplete="current-password"/></div>
+    <button class="btn-p" id="lbtn">Entrar</button>
+    <div style="text-align:center;margin-top:1.5rem;font-size:0.72rem;color:var(--tm);">© 2026 CoTecha</div>
+  </div>
+</div>
+
+<div id="app">
+  <div class="topbar">
+    <div class="tb-brand">
+      <div class="tb-icon">🔔</div>
+      <span>Co<span>Techa</span> Alertas</span>
+      <span class="tb-sub" id="tb-finca"></span>
+    </div>
+    <div class="tb-right">
+      <span style="font-size:0.72rem;color:rgba(255,255,255,0.6);" id="tb-user"></span>
+      <a href="https://cotecha.github.io/app" class="btn-sm">⬅ Inicio</a>
+      <button class="btn-sm" id="btn-logout">Salir</button>
+    </div>
+  </div>
+
+  <div class="ph">
+    <h2>🔔 Alertas y Avisos</h2>
+    <button onclick="abrirModal()" style="padding:0.45rem 1rem;background:linear-gradient(135deg,var(--g),var(--ta));color:white;border:none;border-radius:20px;font-family:'Inter',sans-serif;font-size:0.82rem;font-weight:700;cursor:pointer;">+ Nueva alerta</button>
+  </div>
+
+  <div class="content">
+    <!-- Contadores -->
+    <div class="counters">
+      <div class="counter c-urg"><div class="counter-n" id="cnt-urg">—</div><div class="counter-l">🚨 Urgentes</div></div>
+      <div class="counter c-pen"><div class="counter-n" id="cnt-pen">—</div><div class="counter-l">⏳ Pendientes</div></div>
+      <div class="counter c-hoy"><div class="counter-n" id="cnt-hoy">—</div><div class="counter-l">📅 Vencen hoy</div></div>
+      <div class="counter c-ok"><div class="counter-n" id="cnt-ok">—</div><div class="counter-l">✅ Completadas</div></div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab active" id="tab-pend" onclick="setTab('pendiente')">⏳ Pendientes</button>
+      <button class="tab" id="tab-comp" onclick="setTab('completada')">✅ Completadas</button>
+      <button class="tab" id="tab-todas" onclick="setTab('todas')">Todas</button>
+    </div>
+
+    <div id="lista-alertas"><div class="loading">Cargando…</div></div>
+  </div>
+
+  <!-- MODAL -->
+  <div class="modal-ov" id="modal" onclick="if(event.target===this)cerrarModal()">
+    <div class="modal-box">
+      <div class="mh">
+        <h3 id="m-titulo">Nueva alerta</h3>
+        <button class="mc" onclick="cerrarModal()">×</button>
+      </div>
+      <input type="hidden" id="m-id"/>
+      <div class="ok-banner" id="m-ok">✅ Alerta guardada</div>
+      <div class="err" id="m-err" style="display:none;"></div>
+
+      <div class="fg"><label>Título *</label><input type="text" id="m-titulo-input" placeholder="Descripción de la alerta o tarea"/></div>
+      <div class="fr2">
+        <div class="fg"><label>Tipo</label>
+          <select id="m-tipo">
+            <option value="aviso">⚠️ Aviso</option>
+            <option value="tarea">✅ Tarea</option>
+            <option value="recordatorio">🔔 Recordatorio</option>
+            <option value="urgente">🚨 Urgente</option>
+          </select>
+        </div>
+        <div class="fg"><label>Fecha límite</label><input type="date" id="m-fecha"/></div>
+      </div>
+      <div class="fg"><label>Descripción</label><textarea id="m-desc" placeholder="Detalles adicionales…"></textarea></div>
+      <div class="fr2">
+        <div class="fg"><label>Cultivo</label><select id="m-cult"><option value="">Sin cultivo</option></select></div>
+        <div class="fg"><label>Ubicación</label><select id="m-ubic"><option value="">Sin ubicación</option></select></div>
+      </div>
+      <div class="fg"><label>Asignar a empleado</label><select id="m-asig"><option value="">Sin asignar</option></select></div>
+
+      <div style="display:flex;gap:0.75rem;margin-top:0.5rem;">
+        <button onclick="cerrarModal()" style="flex:1;padding:0.75rem;background:var(--ow);border:1.5px solid #dde8e0;border-radius:10px;font-family:'Inter',sans-serif;font-size:0.9rem;color:var(--tm);cursor:pointer;">Cancelar</button>
+        <button onclick="guardarAlerta()" style="flex:2;padding:0.75rem;background:linear-gradient(135deg,var(--g),var(--ta));border:none;border-radius:50px;font-family:'Inter',sans-serif;font-size:0.9rem;font-weight:700;color:white;cursor:pointer;" id="m-btn">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <footer>© 2026 CoTecha · Todos los derechos reservados</footer>
+</div>
+
+<script>
+const SB_URL='https://gkhujhooviccodadnngx.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdraHVqaG9vdmljY29kYWRubmd4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMjQ1MTgsImV4cCI6MjA4OTYwMDUxOH0.n5o_sVkO24zW9NLHaYLk_i8tsOJZMiYDg1qEU9LhnfU';
+let sb,fincaId,user,cultivos=[],ubicaciones=[],empleados=[],alertas=[],tabActual='pendiente';
+
+function initSB(){if(!sb)sb=window.supabase.createClient(SB_URL,SB_KEY);}
+
+async function doLogin(){
+  const e=document.getElementById('lem').value.trim(),p=document.getElementById('lpass').value,btn=document.getElementById('lbtn');
+  btn.disabled=true;btn.textContent='Entrando…';
+  const{data,error}=await sb.auth.signInWithPassword({email:e,password:p});
+  btn.disabled=false;btn.textContent='Entrar';
+  if(error){document.getElementById('lerr').textContent=error.message;document.getElementById('lerr').classList.add('show');return;}
+  await showApp(data.user);
+}
+
+async function showApp(u){
+  user=u;
+  document.getElementById('tb-user').textContent=u.email;
+  document.getElementById('login-page').style.display='none';
+  document.getElementById('app').style.cssText='display:flex;flex-direction:column;min-height:100vh;';
+  const{data:fu}=await sb.from('finca_usuarios').select('finca_id,fincas(nombre)').limit(1);
+  if(!fu?.length)return;
+  fincaId=fu[0].finca_id;
+  document.getElementById('tb-finca').textContent=fu[0].fincas.nombre;
+  const[rc,ru,re]=await Promise.all([
+    sb.from('cultivos').select('*').eq('finca_id',fincaId).eq('activo',true).order('orden'),
+    sb.from('ubicaciones').select('*').eq('finca_id',fincaId).eq('activo',true).order('codigo'),
+    sb.from('empleados').select('*').eq('finca_id',fincaId).eq('activo',true).order('apellidos')
+  ]);
+  cultivos=rc.data||[];ubicaciones=ru.data||[];empleados=re.data||[];
+  poblarSelects();
+  await cargarAlertas();
+}
+
+function poblarSelects(){
+  document.getElementById('m-cult').innerHTML='<option value="">Sin cultivo</option>'+cultivos.map(c=>`<option value="${c.nombre}">${c.nombre}</option>`).join('');
+  document.getElementById('m-ubic').innerHTML='<option value="">Sin ubicación</option>'+ubicaciones.map(u=>`<option value="${u.codigo}">${u.codigo}</option>`).join('');
+  document.getElementById('m-asig').innerHTML='<option value="">Sin asignar</option>'+empleados.map(e=>`<option value="${e.id}">${e.nombre} ${e.apellidos}</option>`).join('');
+}
+
+async function cargarAlertas(){
+  const{data}=await sb.from('alertas').select('*,empleados(nombre,apellidos)').eq('finca_id',fincaId).order('created_at',{ascending:false}).limit(500);
+  alertas=data||[];
+  actualizarContadores();
+  renderLista();
+}
+
+function actualizarContadores(){
+  const hoy=new Date().toISOString().split('T')[0];
+  document.getElementById('cnt-urg').textContent=alertas.filter(a=>a.tipo==='urgente'&&a.estado==='pendiente').length;
+  document.getElementById('cnt-pen').textContent=alertas.filter(a=>a.estado==='pendiente').length;
+  document.getElementById('cnt-hoy').textContent=alertas.filter(a=>a.fecha_limite===hoy&&a.estado==='pendiente').length;
+  document.getElementById('cnt-ok').textContent=alertas.filter(a=>a.estado==='completada').length;
+}
+
+function setTab(tab){
+  tabActual=tab;
+  ['pend','comp','todas'].forEach(t=>{
+    const el=document.getElementById('tab-'+t);
+    if(el)el.classList.toggle('active',
+      (t==='pend'&&tab==='pendiente')||(t==='comp'&&tab==='completada')||(t==='todas'&&tab==='todas')
+    );
+  });
+  renderLista();
+}
+
+const TIPO_META={
+  urgente:{label:'Urgente',icon:'🚨',color:'#991b1b',bg:'#fee2e2'},
+  aviso:{label:'Aviso',icon:'⚠️',color:'#854d0e',bg:'#fef9c3'},
+  tarea:{label:'Tarea',icon:'✅',color:'#1d4ed8',bg:'#dbeafe'},
+  recordatorio:{label:'Recordatorio',icon:'🔔',color:'#166534',bg:'#dcfce7'},
+};
+
+function diasHasta(fecha){
+  if(!fecha)return null;
+  const d=Math.ceil((new Date(fecha)-new Date().setHours(0,0,0,0))/(1000*60*60*24));
+  return d;
+}
+
+function renderLista(){
+  const cont=document.getElementById('lista-alertas');
+  let filtered=alertas;
+  if(tabActual==='pendiente')filtered=alertas.filter(a=>a.estado==='pendiente');
+  else if(tabActual==='completada')filtered=alertas.filter(a=>a.estado==='completada');
+
+  if(!filtered.length){
+    cont.innerHTML=`<div style="text-align:center;padding:3rem;color:var(--tm);">
+      <div style="font-size:3rem;margin-bottom:1rem;">${tabActual==='completada'?'✅':'🔔'}</div>
+      <p>${tabActual==='completada'?'Sin alertas completadas':'Sin alertas pendientes — ¡todo en orden!'}</p>
+    </div>`;return;
+  }
+
+  // Sort: urgentes primero, luego por fecha límite
+  filtered.sort((a,b)=>{
+    if(a.tipo==='urgente'&&b.tipo!=='urgente')return -1;
+    if(b.tipo==='urgente'&&a.tipo!=='urgente')return 1;
+    if(a.fecha_limite&&b.fecha_limite)return new Date(a.fecha_limite)-new Date(b.fecha_limite);
+    if(a.fecha_limite)return -1;if(b.fecha_limite)return 1;
+    return 0;
+  });
+
+  cont.innerHTML=filtered.map(a=>{
+    const m=TIPO_META[a.tipo]||TIPO_META.aviso;
+    const comp=a.estado==='completada';
+    const dias=diasHasta(a.fecha_limite);
+    let venceHtml='';
+    if(a.fecha_limite){
+      let cls='',txt='';
+      if(dias<0){cls='red';txt=`⏰ Vencida hace ${Math.abs(dias)} día${Math.abs(dias)!==1?'s':''}`;}
+      else if(dias===0){cls='red';txt='⏰ Vence hoy';}
+      else if(dias<=3){cls='amber';txt=`⏰ Vence en ${dias} día${dias!==1?'s':''}`;}
+      else txt=`📅 ${new Date(a.fecha_limite).toLocaleDateString('es-ES')}`;
+      venceHtml=`<span class="vence ${cls}">${txt}</span>`;
+    }
+    const asig=a.empleados?`<span>👤 ${a.empleados.nombre} ${a.empleados.apellidos}</span>`:'';
+    return`<div class="al-card ${a.tipo} ${comp?'completada-card':''}">
+      <button class="al-toggle ${a.estado}" onclick="toggleEstado('${a.id}','${a.estado}')" title="${comp?'Marcar pendiente':'Marcar completada'}">
+        ${comp?'✓':'○'}
+      </button>
+      <div class="al-body">
+        <div class="al-tipo" style="color:${m.color};">${m.icon} ${m.label}</div>
+        <div class="al-titulo ${comp?'done':''}">${a.titulo}</div>
+        ${a.descripcion?`<div class="al-desc">${a.descripcion}</div>`:''}
+        <div class="al-meta">
+          ${venceHtml}
+          ${a.cultivo?`<span>🌱 ${a.cultivo}</span>`:''}
+          ${a.ubicacion?`<span>📍 ${a.ubicacion}</span>`:''}
+          ${asig}
+          ${comp&&a.completada_at?`<span>✅ ${new Date(a.completada_at).toLocaleDateString('es-ES')}</span>`:''}
+        </div>
+        <div class="al-actions">
+          <button class="btn-edit" onclick="editarAlerta(${JSON.stringify(a).replace(/"/g,'&quot;')})">✏️ Editar</button>
+          <button class="btn-del" onclick="eliminarAlerta('${a.id}')">🗑 Eliminar</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function toggleEstado(id,estadoActual){
+  const nuevo=estadoActual==='pendiente'?'completada':'pendiente';
+  const payload={estado:nuevo};
+  if(nuevo==='completada')payload.completada_at=new Date().toISOString();
+  else payload.completada_at=null;
+  await sb.from('alertas').update(payload).eq('id',id);
+  await cargarAlertas();
+}
+
+function abrirModal(a=null){
+  document.getElementById('m-titulo').textContent=a?'Editar alerta':'Nueva alerta';
+  document.getElementById('m-id').value=a?a.id:'';
+  document.getElementById('m-titulo-input').value=a?a.titulo:'';
+  document.getElementById('m-tipo').value=a?a.tipo:'aviso';
+  document.getElementById('m-fecha').value=a?a.fecha_limite||'':'';
+  document.getElementById('m-desc').value=a?a.descripcion||'':'';
+  document.getElementById('m-err').style.display='none';
+  document.getElementById('m-ok').classList.remove('show');
+  setTimeout(()=>{
+    document.getElementById('m-cult').value=a?a.cultivo||'':'';
+    document.getElementById('m-ubic').value=a?a.ubicacion||'':'';
+    document.getElementById('m-asig').value=a?a.asignado_a||'':'';
+  },50);
+  document.getElementById('modal').style.display='flex';
+}
+function cerrarModal(){document.getElementById('modal').style.display='none';}
+function editarAlerta(a){abrirModal(a);}
+
+async function guardarAlerta(){
+  const id=document.getElementById('m-id').value;
+  const titulo=document.getElementById('m-titulo-input').value.trim();
+  const errDiv=document.getElementById('m-err');
+  if(!titulo){errDiv.textContent='El título es obligatorio.';errDiv.style.display='block';return;}
+  const btn=document.getElementById('m-btn');btn.disabled=true;btn.textContent='Guardando…';
+  const tipo=document.getElementById('m-tipo').value;
+  const payload={
+    titulo,
+    tipo,
+    fecha_limite:document.getElementById('m-fecha').value||null,
+    descripcion:document.getElementById('m-desc').value.trim()||null,
+    cultivo:document.getElementById('m-cult').value||null,
+    ubicacion:document.getElementById('m-ubic').value||null,
+    asignado_a:document.getElementById('m-asig').value||null,
+    finca_id:fincaId,user_id:user.id
+  };
+  let error;
+  if(id){({error}=await sb.from('alertas').update(payload).eq('id',id));}
+  else{({error}=await sb.from('alertas').insert([payload]));}
+  btn.disabled=false;btn.textContent='Guardar';
+  if(error){errDiv.textContent='Error: '+error.message;errDiv.style.display='block';return;}
+  // Disparar push si es urgente y es nueva
+  if(!id && tipo==='urgente'){
+    await dispararPushUrgente(titulo, payload.descripcion);
+  }
+  document.getElementById('m-ok').classList.add('show');
+  setTimeout(()=>{cerrarModal();cargarAlertas();},1200);
+}
+
+async function dispararPushUrgente(titulo, descripcion) {
+  try {
+    await sb.functions.invoke('send-push', {
+      body: {
+        finca_id: fincaId,
+        title: '🚨 Alerta Urgente — CoTecha',
+        body: titulo + (descripcion ? ': ' + descripcion.substring(0, 80) : ''),
+        tipo: 'urgente',
+        url: 'https://cotecha.github.io/alertas'
+      }
+    });
+  } catch(e) { console.warn('Push send error:', e); }
+}
+
+async function eliminarAlerta(id){
+  if(!confirm('¿Eliminar esta alerta?'))return;
+  await sb.from('alertas').delete().eq('id',id);
+  cargarAlertas();
+}
+
+window.addEventListener('DOMContentLoaded',()=>{
+  initSB();
+  sb.auth.getSession().then(async({data:{session}})=>{
+    if(session)await showApp(session.user);
+    else document.getElementById('login-page').style.display='flex';
+  });
+  document.getElementById('lbtn').addEventListener('click',doLogin);
+  document.getElementById('lpass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+  document.getElementById('btn-logout').addEventListener('click',async()=>{await sb.auth.signOut();location.reload();});
+});
+</script>
+</body>
+</html>
